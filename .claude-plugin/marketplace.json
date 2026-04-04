@@ -1,0 +1,19 @@
+{
+  "name": "claude-journal",
+  "owner": {
+    "name": "jl-cmd"
+  },
+  "metadata": {
+    "description": "Memory and session management plugin suite for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "journal",
+      "source": "./",
+      "description": "Memory and session management for Claude Code. Includes /dream, /session-log, and /session-tidy.",
+      "version": "1.0.0",
+      "category": "productivity",
+      "tags": ["memory", "session", "obsidian", "dream", "consolidation"]
+    }
+  ]
+}

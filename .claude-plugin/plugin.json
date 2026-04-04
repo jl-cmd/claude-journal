@@ -1,0 +1,12 @@
+{
+  "name": "journal",
+  "description": "Memory and session management for Claude Code. Includes /dream (memory consolidation), /session-log (write session reports to Obsidian), and /session-tidy (audit and clean session logs).",
+  "version": "1.1.0",
+  "author": {
+    "name": "jl-cmd"
+  },
+  "homepage": "https://github.com/jl-cmd/claude-journal",
+  "repository": "https://github.com/jl-cmd/claude-journal",
+  "license": "MIT",
+  "keywords": ["memory", "session", "obsidian", "dream", "consolidation", "journal"]
+}
