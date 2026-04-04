@@ -55,12 +55,12 @@ No changes without your approval.
 
 ## `/session-log` -- Write Session Reports
 
-Writes a structured session report to your Obsidian vault via the Obsidian MCP server.
+Writes structured session reports with automatic backend detection. Works out of the box with zero setup -- just `/session-log`.
 
 - Auto-detects project name and increments session number
 - Frontmatter: `type`, `project`, `session`, `date`, `status`, `blocked`, `tags`
 - Content: emoji-prefixed outcome sections, tables for structured data, no play-by-play
-- Falls back to conversation output if Obsidian MCP is unavailable
+- Automatically detects which storage backend is available (see Setup Tiers below)
 
 ## `/session-tidy` -- Session Log Consolidation
 
@@ -79,10 +79,65 @@ The maintenance counterpart to `/session-log`. Run periodically or after finishi
 
 No changes without your approval.
 
+## Setup Tiers
+
+`/session-log` auto-detects which backend is available. Choose the tier that fits your environment:
+
+### Tier 1: Zero Setup (filesystem)
+
+Works immediately after install. Session logs are saved as plain markdown files to `~/.claude/sessions/`.
+
+- No Obsidian required
+- No MCP server required
+- Works in cloud environments, containers, and CI/CD
+- Vault context tracking and session tidy are unavailable (Steps 2 and 4 skip)
+
+### Tier 2: Headless Vault (server/cloud environments)
+
+Sync an Obsidian vault without the desktop app using the official [obsidian-headless](https://github.com/obsidianmd/obsidian-headless) CLI, then point session-log at it.
+
+```bash
+npm i -g obsidian-headless
+ob login
+ob sync-setup --vault "SessionLog"
+ob sync --continuous
+```
+
+Set the vault path so session-log can find it:
+
+```json
+{
+  "env": {
+    "OBSIDIAN_VAULT_PATH": "/path/to/synced/vault"
+  }
+}
+```
+
+Or place the vault at `~/.claude/vault/` (auto-detected).
+
+Optionally add a filesystem MCP server like [StevenStavrakis/obsidian-mcp](https://github.com/StevenStavrakis/obsidian-mcp) for search and indexing without Obsidian desktop:
+
+```bash
+pip install obsidian-mcp
+```
+
+- Requires [Obsidian Sync](https://obsidian.md/sync) ($4/mo) for `obsidian-headless`
+- Requires Node.js 22+ for `obsidian-headless`
+- Vault context tracking and session tidy skip in this tier (they require Obsidian MCP)
+
+### Tier 3: Full Obsidian (desktop environments)
+
+The complete experience with search, frontmatter management, vault context tracking, and session tidy.
+
+1. Install [Obsidian](https://obsidian.md/)
+2. Install the [Local REST API](https://github.com/coddingtonbear/obsidian-local-rest-api) community plugin
+3. Connect an [Obsidian MCP server](https://github.com/MarkusPfundstein/mcp-obsidian) to Claude Code
+
+All 5 steps of the session-log workflow run in this tier.
+
 ## Prerequisites
 
 - Claude Code 1.0.33+
-- For `/session-log` and `/session-tidy`: an [Obsidian MCP server](https://github.com/MarkusPfworlds/obsidian-mcp) connected to Claude Code
 
 ## Plugin Structure
 

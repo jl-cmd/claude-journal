@@ -7,11 +7,44 @@ description: Log a session report to the Obsidian vault, track vault context usa
 
 ## Overview
 
-Write a session report to the Obsidian vault (`SessionLog`) via `mcp__obsidian__write_note`, then automatically run vault context tracking, decision extraction, and session tidying for the project.
+Write a structured session report, then run vault context tracking, decision extraction, and session tidying.
 
 **Announce at start:** "I'm logging this session."
 
 This skill runs as a 5-step workflow. Every step runs automatically -- no user prompts between steps except where noted.
+
+## Backend Detection (run before Step 1)
+
+Determine which storage backend is available. Try in this order:
+
+1. **Obsidian MCP** -- call `mcp__obsidian__list_directory` with `path="sessions"`. If it succeeds, use Obsidian MCP for all operations. Set `backend = "obsidian"`.
+
+2. **Headless vault** -- if Obsidian MCP is unavailable, check whether the `OBSIDIAN_VAULT_PATH` environment variable is set or `~/.claude/vault/` exists. If either resolves to a directory, use direct filesystem I/O against that vault path. Set `backend = "headless"`. This supports [obsidian-headless](https://github.com/obsidianmd/obsidian-headless) (`ob sync`) or a filesystem MCP like [StevenStavrakis/obsidian-mcp](https://github.com/StevenStavrakis/obsidian-mcp).
+
+3. **Plain filesystem** -- if neither is available, write to `~/.claude/sessions/`. Set `backend = "filesystem"`.
+
+**Backend capabilities:**
+
+| Capability | obsidian | headless | filesystem |
+|---|---|---|---|
+| Write session reports | `mcp__obsidian__write_note` | Write tool | Write tool |
+| Search prior sessions | `mcp__obsidian__search_notes` | Bash `ls` + Grep | Bash `ls` + Grep |
+| Session number detection | frontmatter search | parse filenames | parse filenames |
+| Frontmatter | handled by MCP | YAML `---` fences | YAML `---` fences |
+| Step 2 (vault context tracking) | runs | skip | skip |
+| Step 4 (session tidy) | runs | skip | skip |
+
+**Session number detection (headless and filesystem):**
+- List files in the project directory via Bash `ls`
+- Parse filenames matching `[N]. *.md`
+- Highest N + 1. If directory does not exist, create it and start at 1
+
+**Output paths:**
+- obsidian: `sessions/[Project]/[N]. [Title].md` (vault-relative)
+- headless: `$OBSIDIAN_VAULT_PATH/sessions/[Project]/[N]. [Title].md` or `~/.claude/vault/sessions/[Project]/[N]. [Title].md`
+- filesystem: `~/.claude/sessions/[Project]/[N]. [Title].md`
+
+Announce the backend: "Using Obsidian vault.", "Using headless vault at [path].", or "Obsidian unavailable -- writing to ~/.claude/sessions/."
 
 ---
 
@@ -30,7 +63,11 @@ This skill runs as a 5-step workflow. Every step runs automatically -- no user p
    - **Frontmatter:** `{"type": "session-report", "project": "[name]", "session": [N], "date": "[YYYY-MM-DD]", "status": "completed"|"in-progress"|"blocked", "blocked": true|false, "tags": ["session", "[project-tag]"]}`
    - **Content:** Markdown formatted (see Vault Format below)
 
-4. If the Obsidian MCP server is unavailable, output the content in the conversation so the user can copy it manually. Skip Steps 2-4 and go directly to Step 5.
+4. **Backend-specific write:**
+   - **obsidian:** `mcp__obsidian__write_note` with path and frontmatter object
+   - **headless:** Write tool to the headless vault path. Include frontmatter as YAML `---` fences at the top of the file. Create the project directory via `mkdir -p` if it does not exist.
+   - **filesystem:** Write tool to `~/.claude/sessions/[Project]/[N]. [Title].md`. Include frontmatter as YAML `---` fences. Create the directory via `mkdir -p` if it does not exist.
+   - **If all backends fail:** output the content in the conversation so the user can copy it manually. Skip Steps 2-4 and go directly to Step 5.
 
 ### Vault Format -- Markdown Session Report
 
