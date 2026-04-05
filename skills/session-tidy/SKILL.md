@@ -49,7 +49,18 @@ tags: ["session", "[project-tag]"]
 
 ### Phase 0: Preflight
 
-Verify Obsidian MCP is available by calling `mcp__obsidian__list_directory` on `sessions/`. If it fails, tell the user: "Obsidian MCP is unavailable. Make sure the vault is open and the MCP server is running." and stop.
+Determine which storage backend is available. Try in this order and use the first that succeeds:
+
+1. **Headless vault** -- run `ob --version` via Bash to verify the obsidian-headless CLI is installed. Then check `OBSIDIAN_VAULT_PATH` environment variable or `~/.claude/vault/` for a vault directory. If the CLI exists and a vault directory resolves, set `backend = "headless"`.
+
+2. **Obsidian MCP** -- call `mcp__obsidian__list_directory` with `path="sessions"`. If it succeeds, set `backend = "obsidian"`.
+
+3. **Local vault** -- use `~/.claude/vault/` as a local vault directory. Create it via `mkdir -p ~/.claude/vault/sessions` if it does not exist. Set `backend = "local"`.
+
+**Headless and local capability notes:** When running without Obsidian MCP, the following operations use alternative methods:
+- **Move/rename:** `mv` via Bash
+- **Frontmatter update:** Read + modify YAML + Write
+- **Search:** Bash `ls` + Grep
 
 ### Phase 1: Audit
 
